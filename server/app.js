@@ -5,7 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
-require('./db'); // 初始化数据库 + 种子
+require('./db'); // 加载云数据库适配层（内部自动 ensureSeed）
 const authRoutes = require('./routes/auth');
 const inquiryRoutes = require('./routes/inquiries');
 const quotationRoutes = require('./routes/quotations');
