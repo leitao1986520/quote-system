@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // 本地开发用 /api（由 vite proxy 转发到后端）；
-// 部署到 Vercel 后通过环境变量 VITE_API_BASE 指向 Render 后端地址，例如 https://xxx.onrender.com
+// 部署到 CloudBase 后静态站与云函数同域，直接走 /api（由云端 rewrite 转发到 quote-api 函数）。
 const baseURL = import.meta.env.VITE_API_BASE
   ? `${import.meta.env.VITE_API_BASE.replace(/\/$/, '')}/api`
   : '/api';
