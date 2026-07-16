@@ -5,7 +5,9 @@ const bcrypt = require('bcryptjs');
 
 const DATA_DIR = process.env.DATA_DIR
   ? path.resolve(process.env.DATA_DIR)
-  : path.join(__dirname, 'data');
+  : process.env.VERCEL
+    ? '/tmp/quote-system-data'   // Vercel 只读文件系统，仅 /tmp 可写（重启后重置）
+    : path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const db = new Database(path.join(DATA_DIR, 'quote.db'));
