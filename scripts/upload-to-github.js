@@ -89,7 +89,28 @@ async function github(method, apiPath, body) {
     process.exit(1);
   }
 
-  // 2) 逐个上传文件（存在则更新 SHA）
+  // 2) 获取远程现有文件清单（用于删除本地已移除的文件）
+  const localRels = new Set(files.map((f) => f.rel));
+  const treeRes = await github('GET', `/repos/${OWNER}/${REPO}/git/trees/main?recursive=1`);
+  const remoteFiles = treeRes.status === 200 && treeRes.data.tree
+    ? treeRes.data.tree.filter((t) => t.type === 'blob').map((t) => t.path)
+    : [];
+  for (const rel of remoteFiles) {
+    const skip = ['node_modules/', 'dist/', '.git/', 'data/'].some((p) => rel.startsWith(p));
+    if (skip) continue;
+    if (!localRels.has(rel)) {
+      const getRes = await github('GET', `/repos/${OWNER}/${REPO}/contents/${rel}`);
+      if (getRes.status === 200) {
+        const delRes = await github('DELETE', `/repos/${OWNER}/${REPO}/contents/${rel}`, {
+          message: `remove ${rel}`,
+          sha: getRes.data.sha,
+        });
+        console.log(delRes.status === 200 ? '✗删' : '✗删除失败', rel);
+      }
+    }
+  }
+
+  // 3) 逐个上传文件（存在则更新 SHA）
   for (const f of files) {
     const content = fs.readFileSync(f.full);
     const b64 = content.toString('base64');
