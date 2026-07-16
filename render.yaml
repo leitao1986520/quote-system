@@ -1,0 +1,22 @@
+# Render 后端部署配置（免费 Web Service）
+# 在 Render 控制台选择 "Blueprint" 方式连接本仓库，会自动读取此文件。
+# 也可不用此文件，手动在 Render 新建 Web Service 并指到 server/ 目录。
+services:
+  - type: web
+    name: quote-system-backend
+    runtime: node
+    region: oregon          # 可选：singapore / frankfurt 等
+    plan: free              # 免费层
+    rootDir: quote-system/server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true   # Render 自动生成随机密钥；也可固定填你的人值
+      # 如需持久化数据库（避免免费层重启丢数据），在 Render 创建 Disk 并挂载到 /var/data，
+      # 然后取消下面这行注释：
+      # - key: DATA_DIR
+      #   value: /var/data
