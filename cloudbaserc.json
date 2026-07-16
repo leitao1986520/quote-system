@@ -1,0 +1,33 @@
+{
+  "envId": "{{ENV_ID}}",
+  "functionRoot": "server",
+  "functions": [
+    {
+      "name": "quote-api",
+      "handler": "index.main",
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "timeout": 30,
+      "installDependency": true
+    }
+  ],
+  "hosting": {
+    "bucket": "quote-system",
+    "src": "web/dist",
+    "ignore": ["**/*.map"],
+    "rewrite": [
+      {
+        "source": "/api/**",
+        "destination": "/quote-api"
+      },
+      {
+        "source": "/api",
+        "destination": "/quote-api"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
