@@ -59,36 +59,38 @@ npm run dev        # http://localhost:5173
 | 供应商2 | supplier2 | sup123 |
 | 供应商3 | supplier3 | sup123 |
 
-## 生产部署（Vercel 单平台，免费）
+## 生产部署（腾讯云 CloudBase，国内直连）
 
-已改为**全部部署到 Vercel 一家**（前端静态站 + 后端 Serverless 函数），零成本、手机电脑均可访问。
-（注：原 Render 方案因网络限制不可用，配置保留在 `render.yaml` 备用。）
+已改为部署到**腾讯云 CloudBase**：前端静态网站托管 + 后端云函数 + **云数据库**（数据持久保存，不再丢失）。
+国内手机/电脑均可直接访问，解决了 Vercel / Render 域名被墙的问题。
 
-- `vercel.json`（根）— 构建前端、安装后端依赖、托管前端产物、把 `/api` 交给函数
-- `api/index.js` — Vercel Serverless 函数入口，复用 `server/app.js` 的 Express 应用
-- `server/app.js` — 抽出的共享 Express 应用（本地与 Vercel 共用）
-- 前端 `src/api.js` 在 Vercel 上走同源 `/api`，无需跨域
+- `cloudbaserc.json`（根）— CloudBase 项目配置：静态托管 `web/dist` + 云函数 `quote-api` + `/api` 路由转发
+- `server/index.js` — CloudBase 云函数入口（`exports.main`），用 `serverless-http` 包装 Express
+- `server/db.js` — 改用 CloudBase 云数据库（`@cloudbase/node-sdk`），替代本地 SQLite
+- `server/app.js` — 共享 Express 应用（本地与云函数共用）
+- 前端 `src/api.js` 走同源 `/api`，由云端 rewrite 转发到云函数
 
 👉 详细图文步骤见 **[docs/云端部署教程.md](docs/云端部署教程.md)**。
 
 ### 本仓库部署速查（GitHub: leitao1986520/quote-system）
 
-在 Vercel 导入本仓库时填写：
-- **Framework Preset**：`Other`
-- **Root Directory**：`.`（仓库根）
-- **Build Command**：`npm run build`（默认已配）
-- **Install Command**：`npm run install:server`（默认已配）
-- **Output Directory**：`web/dist`（默认已配）
-- 环境变量：`JWT_SECRET=12d2b37ff2c00c43fbf1e09ebe0d7d010555df5729af7ac41ece00aa6e308801`
+1. 安装 CloudBase CLI：`npm i -g @cloudbase/cli`
+2. 登录：`tcb login`
+3. 克隆并构建前端：`npm run build`（产出 `web/dist`）
+4. 部署：`tcb framework deploy`（或 `tcb hosting deploy web/dist` + `tcb fn deploy quote-api`）
+5. 在 CloudBase 控制台「云数据库」创建集合：`users / inquiries / inquiry_items / quotations / quotation_items`
+6. 在云函数 `quote-api` 环境变量中设置：`JWT_SECRET`、`TCB_ENV`（云环境 ID）
+7. 访问静态网站域名即可（国内直连）
 
-### ⚠️ 数据持久化说明（重要）
+环境变量：
+- `JWT_SECRET=12d2b37ff2c00c43fbf1e09ebe0d7d010555df5729af7ac41ece00aa6e308801`
+- `TCB_ENV=<你的云环境 ID，如 quote-system-1a2b3c>`
 
-Vercel 的 Serverless 函数是**临时运行环境**，SQLite 数据库写在 `/tmp`，**函数冷启动/重新部署后数据会重置**（演示数据会自动重新生成）。
-- 适合：演示、试用、小流量展示
-- 不适合：需要长期保存业务数据的正式生产
-- 若要持久化：后续可将数据库换成 Vercel Postgres / Supabase 等托管数据库
+### 数据持久化（已解决）
 
-### 本地生产构建（单端口）
+数据库使用 **CloudBase 云数据库**，数据写入云端持久保存，**重启/重新部署不丢失**，适合正式使用。
+
+### 本地生产构建（单端口，可选）
 
 1. 前端构建：`cd web && npm run build`（产出 `web/dist`）
 2. 后端已配置静态托管 `web/dist`，直接 `node index.js` 即可单端口（4000）访问
@@ -99,10 +101,12 @@ Vercel 的 Serverless 函数是**临时运行环境**，SQLite 数据库写在 `
 ## 目录结构
 ```
 quote-system/
-├─ server/   # 后端
-│  ├─ index.js
-│  ├─ db.js          # SQLite 建表 + 种子
-│  ├─ auth.js        # JWT
-│  └─ routes/        # auth / inquiries / quotations / export
+├─ cloudbaserc.json   # CloudBase 部署配置
+├─ server/   # 后端（CloudBase 云函数）
+│  ├─ index.js        # 云函数入口（serverless-http 包装 Express）
+│  ├─ app.js          # 共享 Express 应用
+│  ├─ db.js           # CloudBase 云数据库适配层 + 种子
+│  ├─ auth.js         # JWT
+│  └─ routes/         # auth / inquiries / quotations / export
 └─ web/      # 前端 React
 ```
