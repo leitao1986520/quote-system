@@ -59,16 +59,34 @@ npm run dev        # http://localhost:5173
 | 供应商2 | supplier2 | sup123 |
 | 供应商3 | supplier3 | sup123 |
 
-## 生产部署（免费云端，推荐）
+## 生产部署（Vercel 单平台，免费）
 
-已为 **Render（后端）+ Vercel（前端）** 免费方案做好配置，零成本、手机电脑均可访问：
+已改为**全部部署到 Vercel 一家**（前端静态站 + 后端 Serverless 函数），零成本、手机电脑均可访问。
+（注：原 Render 方案因网络限制不可用，配置保留在 `render.yaml` 备用。）
 
-- `quote-system/render.yaml` — Render 后端部署配置（免费层，Node 自动构建）
-- `quote-system/web/vercel.json` — Vercel 前端配置（把 `/api` 代理到后端）
-- `quote-system/server/.env.example` / `quote-system/web/.env.example` — 环境变量样例
-- 前端 `src/api.js` 已支持 `VITE_API_BASE` 环境变量，本地仍走 `/api` 代理
+- `vercel.json`（根）— 构建前端、安装后端依赖、托管前端产物、把 `/api` 交给函数
+- `api/index.js` — Vercel Serverless 函数入口，复用 `server/app.js` 的 Express 应用
+- `server/app.js` — 抽出的共享 Express 应用（本地与 Vercel 共用）
+- 前端 `src/api.js` 在 Vercel 上走同源 `/api`，无需跨域
 
-👉 详细图文步骤见 **[docs/云端部署教程.md](docs/云端部署教程.md)**（面向零基础，约 10 分钟完成）。
+👉 详细图文步骤见 **[docs/云端部署教程.md](docs/云端部署教程.md)**。
+
+### 本仓库部署速查（GitHub: leitao1986520/quote-system）
+
+在 Vercel 导入本仓库时填写：
+- **Framework Preset**：`Other`
+- **Root Directory**：`.`（仓库根）
+- **Build Command**：`npm run build`（默认已配）
+- **Install Command**：`npm run install:server`（默认已配）
+- **Output Directory**：`web/dist`（默认已配）
+- 环境变量：`JWT_SECRET=12d2b37ff2c00c43fbf1e09ebe0d7d010555df5729af7ac41ece00aa6e308801`
+
+### ⚠️ 数据持久化说明（重要）
+
+Vercel 的 Serverless 函数是**临时运行环境**，SQLite 数据库写在 `/tmp`，**函数冷启动/重新部署后数据会重置**（演示数据会自动重新生成）。
+- 适合：演示、试用、小流量展示
+- 不适合：需要长期保存业务数据的正式生产
+- 若要持久化：后续可将数据库换成 Vercel Postgres / Supabase 等托管数据库
 
 ### 本地生产构建（单端口）
 
