@@ -1,0 +1,10 @@
+{
+  "name": "quote-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "在线报价系统（前端 React + 后端 Express，部署到 Vercel）",
+  "scripts": {
+    "build": "cd web && npm install && npm run build",
+    "install:server": "cd server && npm install"
+  }
+}
